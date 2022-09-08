@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/brandenc40/qcmobile"
@@ -19,7 +20,13 @@ import (
 
 var HostPort = flag.String("hostport", "127.0.0.1:10042", "Host/Port to listen on")
 var Dir = flag.String("dir", "./www", "Directory to server static assets from")
-var ValidationKey = flag.String("key", "FMCSA.l4BUEAzcBvqu8+C1JFxi8vMFr5g=", "Authentication Key")
+var ValidationKey = flag.String("key", "FMCSA.l4BUEAzcBvqu8_C1JFxi8vMFr5g", "Authentication Key")
+var DbFlagParam = flag.String("db_flag", "", "Additional Debug Flags")
+var Version = flag.Bool("version", false, "Report version of code and exit")
+var Comment = flag.String("comment", "", "Unused comment for ps.")
+var Cache = flag.String("cache", "./cache", "Cached Data based on previous calls")
+
+var DbOn map[string]bool = make(map[string]bool)
 
 func main() {
 	flag.Usage = func() {
@@ -35,6 +42,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	if *Version {
+		fmt.Printf("Version (Git Commit): %s\n", GitCommit)
+		os.Exit(0)
+	}
+
+	DebugFlagProcess(*DbFlagParam, DbOn)
+	os.MkdirAll(*Cache, 0755)
+
+	//fmt.Printf("DbOn=%s\n", dbgo.SVarI(DbOn))
+	//os.Exit(1)
+
 	Key := os.Getenv("FMCSA_WebKey")
 	if Key == "" {
 		dbgo.Fprintf(os.Stderr, "Not setup correctly - missing environment variable 'FMCSA_WebKey'\n")
@@ -49,13 +67,42 @@ func main() {
 			"msg":    "Hello Silly World!",
 		})
 	})
+
+	type ApiGetMc struct {
+		Mc string `json:"mc" form:"mc" binding:"required"`
+	}
+
 	router.GET("/api/v1/mc-number-data", func(c *gin.Context) {
-		// xyzzy TODO
-		// xyzzy - Validate callers key - get headers.
-		// xyzzy - get parameters mc=
-		// xyzzy - cleanup mc number so if "MC 43565" just use the number, trim, spaces MC- remove etc.
+
+		auth := c.Request.Header.Get("X-Authentication")
+		// fmt.Printf("auth=->%s<- %T ->%s<-\n", auth, auth, dbgo.SVarI(c.Request.Header))
+		if auth != *ValidationKey {
+			c.JSON(http.StatusUnauthorized /*401*/, gin.H{
+				"status": "error",
+				"msg":    "401 - Invalid x-authentication header",
+			})
+			return
+		}
 
 		Key := os.Getenv("FMCSA_WebKey")
+
+		var pp ApiGetMc
+		if err := BindFormOrJSON(c, &pp); err != nil {
+			return
+		}
+
+		fmt.Printf("At Top mc=%+v\n", pp)
+
+		// xyzzy TODO
+		// xyzzy - cleanup mc number so if "MC 43565" just use the number, trim, spaces MC- remove etc.
+
+		if DbOn["early-return"] {
+			c.JSON(http.StatusOK /*200*/, gin.H{
+				"status": "success",
+				"msg":    "Yep it worked",
+			})
+			return
+		}
 
 		cfg := qcmobile.Config{
 			Key:        Key,
@@ -65,7 +112,7 @@ func main() {
 		ctx := context.Background()
 		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 		defer cancel()
-		carrier, err := client.GetCarrier(ctx, "53467")
+		carrier, err := client.GetCarrier(ctx, pp.Mc)
 		if err != nil {
 			c.JSON(http.StatusOK /*200*/, gin.H{
 				"status": "error",
@@ -78,9 +125,56 @@ func main() {
 		c.String(http.StatusOK /*200*/, `{"status":"success",`+dbgo.SVarI(carrier)+"}\n")
 		return
 	})
+
 	router.GET("/status", func(c *gin.Context) {
 		c.Header("Content-Type", "application/json; charset=utf-8")
 		c.String(http.StatusOK /*200*/, dbgo.SVarI(c))
 	})
+
 	router.Run(*HostPort) // listen and serve on 0.0.0.0:9090
+}
+
+func DebugFlagProcess(DbFlagParam string, DbOn map[string]bool) {
+	for _, s := range strings.Split(DbFlagParam, ",") {
+		DbOn[s] = true
+	}
+}
+
+func BindFormOrJSON(c *gin.Context, bindTo interface{}) (err error) {
+	content_type := c.Request.Header.Get("Content-Type")
+	content_type = strings.ToLower(content_type)
+	method := c.Request.Method
+
+	if method == "POST" || method == "PUT" {
+		if strings.HasPrefix(content_type, "application/json") {
+			if err = c.ShouldBindJSON(bindTo); err != nil {
+				dbgo.Printf("%(red)In BindFormOrJSON at:%(LF) err=%s\n", err)
+				c.JSON(http.StatusNotAcceptable, gin.H{ // 406
+					"status": "error",
+					"msg":    fmt.Sprintf("Error: %s", err),
+				})
+				return
+			}
+		} else {
+			if err = c.ShouldBind(bindTo); err != nil {
+				dbgo.Printf("%(red)In BindFormOrJSON at:%(LF) err=%s\n", err)
+				c.JSON(http.StatusNotAcceptable, gin.H{ // 406
+					"status": "error",
+					"msg":    fmt.Sprintf("Error: %s", err),
+				})
+				return
+			}
+		}
+	} else {
+		if err = c.ShouldBind(bindTo); err != nil {
+			dbgo.Printf("%(red)In BindFormOrJSON at:%(LF) err=%s\n", err)
+			c.JSON(http.StatusNotAcceptable, gin.H{ // 406
+				"status": "error",
+				"msg":    fmt.Sprintf("Error: %s", err),
+			})
+			return
+		}
+	}
+	dbgo.Printf("%(cyan)Parameters: %s at %s\n", dbgo.SVarI(bindTo), dbgo.LF(2))
+	return
 }
