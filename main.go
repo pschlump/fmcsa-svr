@@ -35,6 +35,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	Key := os.Getenv("FMCSA_WebKey")
+	if Key == "" {
+		dbgo.Fprintf(os.Stderr, "Not setup correctly - missing environment variable 'FMCSA_WebKey'\n")
+		os.Exit(1)
+	}
+
 	router := gin.Default()
 	router.Use(static.Serve("/", static.LocalFile(*Dir, true)))
 	router.GET("/api/v1/status", func(c *gin.Context) {
@@ -45,12 +51,11 @@ func main() {
 	})
 	router.GET("/api/v1/mc-number-data", func(c *gin.Context) {
 		// xyzzy TODO
-
 		// xyzzy - Validate callers key - get headers.
 		// xyzzy - get parameters mc=
 		// xyzzy - cleanup mc number so if "MC 43565" just use the number, trim, spaces MC- remove etc.
 
-		Key := os.Getenv("xyzzy")
+		Key := os.Getenv("FMCSA_WebKey")
 
 		cfg := qcmobile.Config{
 			Key:        Key,
@@ -72,11 +77,6 @@ func main() {
 		c.Header("Content-Type", "application/json; charset=utf-8")
 		c.String(http.StatusOK /*200*/, `{"status":"success",`+dbgo.SVarI(carrier)+"}\n")
 		return
-
-		//c.JSON(http.StatusOK /*200*/, gin.H{
-		//	"status": "success",
-		//	"msg":    "Hello Silly World!",
-		//})
 	})
 	router.GET("/status", func(c *gin.Context) {
 		c.Header("Content-Type", "application/json; charset=utf-8")
