@@ -30,5 +30,4 @@ linux:
 	GOOS=linux GOARCH=amd64 go build -o fmcsa-svr_linux
 
 deploy:
-	scp fmcsa-svr_linux philip@45.79.53.54:/home/philip/tmp
-
+	scp fmcsa-svr_linux fmcsa-systemd.service philip@45.79.53.54:/home/philip/tmp
