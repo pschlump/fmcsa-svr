@@ -7,8 +7,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -93,8 +95,10 @@ func main() {
 
 		fmt.Printf("At Top mc=%+v\n", pp)
 
-		// xyzzy TODO
-		// xyzzy - cleanup mc number so if "MC 43565" just use the number, trim, spaces MC- remove etc.
+		// cleanup mc number so if "MC 43565" just use the number, trim, spaces MC- remove etc.
+		var re = regexp.MustCompile(`(^[ \t]*)([mM][cC])?([^0-9]*)?`)
+		pp.Mc = re.ReplaceAllString(pp.Mc, "")
+		fmt.Printf("After mc=->%s<-\n", pp.Mc)
 
 		if DbOn["early-return"] {
 			c.JSON(http.StatusOK /*200*/, gin.H{
@@ -120,6 +124,8 @@ func main() {
 			})
 			return
 		}
+
+		ioutil.WriteFile(fmt.Sprintf("%s/%s.json", *Cache, pp.Mc), []byte(dbgo.SVarI(carrier)), 0644)
 
 		c.Header("Content-Type", "application/json; charset=utf-8")
 		c.String(http.StatusOK /*200*/, `{"status":"success",`+dbgo.SVarI(carrier)+"}\n")
