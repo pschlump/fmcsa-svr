@@ -1,0 +1,20 @@
+[Unit]
+Description=FMCSA MC Number Validation Service
+ConditionPathExists=/home/ginserver/fmcsa
+After=network.target
+
+[Service]
+Type=simple
+User=ginserver
+Group=ginserver
+Environment="FMCSA_WebKey=YOUR-KEY-From-FMCSA"
+WorkingDirectory=/home/ginserver/fmcsa
+ExecStart=/home/ginserver/fmcsa/fmcsa-svr
+Restart=on-failure
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=fmcsaservice
+
+[Install]
+WantedBy=multi-user.target
