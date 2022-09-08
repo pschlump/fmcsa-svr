@@ -1,14 +1,20 @@
 package main
 
+// See LICENSE - Apache 2.0 Licnesed.
+// Copyright (C) Philip Schlump, 2022.
+
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/brandenc40/qcmobile"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/pschlump/dbgo" // modified from "encoding/json" to handle undefined types by ignoring them.
+	"github.com/pschlump/dbgo"
 )
 
 var HostPort = flag.String("hostport", "127.0.0.1:10042", "Host/Port to listen on")
@@ -38,15 +44,39 @@ func main() {
 		})
 	})
 	router.GET("/api/v1/mc-number-data", func(c *gin.Context) {
-		// xyzzy
-		// xyzzy
 		// xyzzy TODO
-		// xyzzy
-		// xyzzy
-		c.JSON(http.StatusOK /*200*/, gin.H{
-			"status": "success",
-			"msg":    "Hello Silly World!",
-		})
+
+		// xyzzy - Validate callers key - get headers.
+		// xyzzy - get parameters mc=
+		// xyzzy - cleanup mc number so if "MC 43565" just use the number, trim, spaces MC- remove etc.
+
+		Key := os.Getenv("xyzzy")
+
+		cfg := qcmobile.Config{
+			Key:        Key,
+			HTTPClient: &http.Client{},
+		}
+		client := qcmobile.NewClient(cfg)
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+		carrier, err := client.GetCarrier(ctx, "53467")
+		if err != nil {
+			c.JSON(http.StatusOK /*200*/, gin.H{
+				"status": "error",
+				"msg":    "Invalid MC number",
+			})
+			return
+		}
+
+		c.Header("Content-Type", "application/json; charset=utf-8")
+		c.String(http.StatusOK /*200*/, `{"status":"success",`+dbgo.SVarI(carrier)+"}\n")
+		return
+
+		//c.JSON(http.StatusOK /*200*/, gin.H{
+		//	"status": "success",
+		//	"msg":    "Hello Silly World!",
+		//})
 	})
 	router.GET("/status", func(c *gin.Context) {
 		c.Header("Content-Type", "application/json; charset=utf-8")
