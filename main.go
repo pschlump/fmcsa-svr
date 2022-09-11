@@ -18,6 +18,7 @@ import (
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/pschlump/dbgo"
+	"github.com/pschlump/filelib"
 )
 
 var HostPort = flag.String("hostport", "127.0.0.1:10042", "Host/Port to listen on")
@@ -108,27 +109,43 @@ func main() {
 			return
 		}
 
-		cfg := qcmobile.Config{
-			Key:        Key,
-			HTTPClient: &http.Client{},
+		var carrier string
+		fn := fmt.Sprintf("%s/%s.json", *Cache, pp.Mc)
+		if filelib.Exists(fn) {
+			buf, err := ioutil.ReadFile(fn)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error reading cached file ->%s<- error :%s\n", fn, err)
+				carrier = ""
+			} else {
+				carrier = string(buf)
+				dbgo.Printf("%(green)Got it %s from cache\n", pp.Mc)
+			}
 		}
-		client := qcmobile.NewClient(cfg)
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-		defer cancel()
-		carrier, err := client.GetCarrier(ctx, pp.Mc)
-		if err != nil {
-			c.JSON(http.StatusOK /*200*/, gin.H{
-				"status": "error",
-				"msg":    "Invalid MC number",
-			})
-			return
+		if carrier == "" {
+			cfg := qcmobile.Config{
+				Key:        Key,
+				HTTPClient: &http.Client{},
+			}
+			client := qcmobile.NewClient(cfg)
+			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+			defer cancel()
+			xcarrier, err := client.GetCarrier(ctx, pp.Mc)
+			if err != nil {
+				c.JSON(http.StatusOK /*200*/, gin.H{
+					"status": "error",
+					"msg":    "Invalid MC number",
+				})
+				return
+			}
+			carrier = dbgo.SVarI(xcarrier)
+			dbgo.Printf("%(yellow)Got it %s from server\n", pp.Mc)
 		}
 
 		ioutil.WriteFile(fmt.Sprintf("%s/%s.json", *Cache, pp.Mc), []byte(dbgo.SVarI(carrier)), 0644)
 
 		c.Header("Content-Type", "application/json; charset=utf-8")
-		c.String(http.StatusOK /*200*/, `{"status":"success",`+dbgo.SVarI(carrier)+"}\n")
+		c.String(http.StatusOK /*200*/, `{"status":"success","data":`+dbgo.SVarI(carrier)+"}\n")
 		return
 	})
 
