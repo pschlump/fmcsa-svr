@@ -1,11 +1,14 @@
 package status
 
+// Copyright (c) Philip Schlump, 2023.
+// This file is MIT licensed, see ../LICENSE.mit
+
 import (
 	"os"
 	"testing"
 	"time"
 
-	"github.com/pschlump/gorush/config"
+	"github.com/pschlump/fmcsa-svr/config"
 
 	"github.com/stretchr/testify/assert"
 )

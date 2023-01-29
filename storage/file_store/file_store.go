@@ -1,19 +1,26 @@
 package file_store
 
+// Copyright (c) Philip Schlump, 2023.
+// This file is MIT licensed, see ../../LICENSE.mit
+
 import (
 	"sync"
 
+	"github.com/pschlump/fmcsa-svr/config"
 	"go.uber.org/atomic"
 )
 
-// New func implements the storage interface for gorush (https://github.com/appleboy/gorush)
-func New() *Storage {
-	return &Storage{}
+// New func implements the storage interface for fmcsa-svr (https://github.com/pschlump/fmcsa-svr)
+func New(gCfg *config.ConfigData) *Storage {
+	return &Storage{
+		storagerFileName: gCfg.StatFileLocaiton,
+	}
 }
 
 // Storage is interface structure
 type Storage struct {
-	mem sync.Map
+	mem              sync.Map
+	storagerFileName string
 }
 
 func (s *Storage) getValueBtKey(key string) *atomic.Int64 {

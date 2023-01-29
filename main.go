@@ -18,10 +18,13 @@ import (
 	"github.com/brandenc40/qcmobile"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/pschlump/ReadConfig"
 	"github.com/pschlump/dbgo"
 	"github.com/pschlump/filelib"
 	"github.com/pschlump/fmcsa-svr/config"
+	"github.com/pschlump/fmcsa-svr/metric"
+	"github.com/pschlump/fmcsa-svr/status"
 )
 
 var HostPort = flag.String("hostport", "127.0.0.1:10042", "Host/Port to listen on")
@@ -63,6 +66,10 @@ func main() {
 		os.Exit(0)
 	}
 
+	SetVersion(GitCommit)
+
+	PrintVersion(logFilePtr)
+
 	// -----------------------------------------------------------------------------------
 	// Save PID to log directory for possible kill later
 	// -----------------------------------------------------------------------------------
@@ -79,6 +86,8 @@ func main() {
 	}
 
 	fmt.Printf("%s\n", dbgo.SVarI(gCfg))
+
+	status.InitAppStatus(&gCfg)
 
 	DebugFlagProcess(*DbFlagParam, DbOn)
 	os.MkdirAll(*Cache, 0755)
@@ -101,6 +110,15 @@ func main() {
 	router := gin.Default()
 	router.Use(static.Serve("/", static.LocalFile(*Dir, true)))
 
+	// ------------------------------------------------------------------------------
+	// Support metrics
+	// ------------------------------------------------------------------------------
+	m := metric.NewMetrics()
+	prometheus.MustRegister(m)
+
+	// ------------------------------------------------------------------------------
+	// Create Routes
+	// ------------------------------------------------------------------------------
 	router.GET("/api/v1/status", func(c *gin.Context) {
 		c.JSON(http.StatusOK /*200*/, gin.H{
 			"status": "success",
@@ -119,6 +137,8 @@ func main() {
 		type ApiGetMc struct {
 			Mc string `json:"mc" form:"mc" binding:"required"`
 		}
+
+		status.StatStorage.AddTotalCount(int64(1))
 
 		auth := c.Request.Header.Get("X-Authentication")
 		if db8 {
@@ -146,27 +166,27 @@ func main() {
 		pp.Mc = re.ReplaceAllString(pp.Mc, "")
 		fmt.Printf("After mc=->%s<-\n", pp.Mc)
 
-		if DbOn["early-return"] {
-			c.JSON(http.StatusOK /*200*/, gin.H{
-				"status": "success",
-				"msg":    "Yep it worked",
-			})
-			return
-		}
-
-		var carrier string
+		var carrierFileName string
+		var carrierData string
 		fn := fmt.Sprintf("%s/%s.json", *Cache, pp.Mc)
+		cacheHit := true
+
 		if filelib.Exists(fn) {
-			buf, err := ioutil.ReadFile(fn)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error reading cached file ->%s<- error :%s\n", fn, err)
-				carrier = ""
+			if buf, err := ioutil.ReadFile(fn); err != nil {
+				cacheHit = false
+				status.StatStorage.AddCacheError(int64(1))
+				dbgo.Fprintf(os.Stderr, "%(red)Error reading cached file ->%s<- error :%s\n", fn, err)
 			} else {
-				carrier = string(buf)
+				carrierData = string(buf)
+				status.StatStorage.AddCacheSuccess(int64(1))
+				carrierFileName = string(buf)
 				dbgo.Printf("%(green)Got it %s from cache\n", pp.Mc)
 			}
+		} else {
+			cacheHit = false
 		}
-		if carrier == "" {
+
+		if !cacheHit {
 			cfg := qcmobile.Config{
 				Key:        Key,
 				HTTPClient: &http.Client{},
@@ -177,25 +197,28 @@ func main() {
 			defer cancel()
 			xcarrier, err := client.GetCarrier(ctx, pp.Mc)
 			if err != nil {
+				status.StatStorage.AddFmcsaError(int64(1))
 				c.JSON(http.StatusOK /*200*/, gin.H{
 					"status": "error",
 					"msg":    "Invalid MC number",
 				})
 				return
 			}
-			carrier = dbgo.SVarI(xcarrier)
+			status.StatStorage.AddFmcsaSuccess(int64(1))
+			carrierData = dbgo.SVarI(xcarrier)
 			dbgo.Printf("%(yellow)Got it %s from server\n", pp.Mc)
 		}
 
-		ioutil.WriteFile(fmt.Sprintf("%s/%s.json", *Cache, pp.Mc), []byte(dbgo.SVarI(carrier)), 0644)
+		ioutil.WriteFile(carrierFileName, []byte(carrierData), 0644)
 
 		c.Header("Content-Type", "application/json; charset=utf-8")
-		c.String(http.StatusOK /*200*/, `{"status":"success","data":`+dbgo.SVarI(carrier)+"}\n")
+		c.String(http.StatusOK /*200*/, `{"status":"success","data":`+carrierData+"}\n")
 		return
 	})
 
 	// Prometheus metric data
 	router.GET("/metric", metricsHandler)
+	router.GET("/status-server", appStatusHandler())
 
 	router.Run(*HostPort) // listen and serve on 0.0.0.0:9090
 }

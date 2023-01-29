@@ -1,10 +1,13 @@
 package memory
 
+// Copyright (c) Philip Schlump, 2023.
+// This file is MIT licensed, see ../../LICENSE.mit
+
 import (
 	"sync"
 	"testing"
 
-	"github.com/pschlump/gorush/core"
+	"github.com/pschlump/fmcsa-svr/core"
 
 	"github.com/stretchr/testify/assert"
 )

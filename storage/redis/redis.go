@@ -1,5 +1,8 @@
 package redis
 
+// Copyright (c) Philip Schlump, 2023.
+// This file is MIT licensed, see ../../LICENSE.mit
+
 import (
 	"context"
 	"fmt"

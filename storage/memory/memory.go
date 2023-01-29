@@ -1,12 +1,15 @@
 package memory
 
+// Copyright (c) Philip Schlump, 2023.
+// This file is MIT licensed, see ../../LICENSE.mit
+
 import (
 	"sync"
 
 	"go.uber.org/atomic"
 )
 
-// New func implements the storage interface for gorush (https://github.com/appleboy/gorush)
+// New func implements the storage interface for fmcsa-svr (https://github.com/pschlump/fmcsa-svr)
 func New() *Storage {
 	return &Storage{}
 }

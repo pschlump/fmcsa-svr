@@ -1,14 +1,18 @@
 package status
 
+// Copyright (c) Philip Schlump, 2023.
+// This file is MIT licensed, see ../LICENSE.mit
+
 import (
 	"errors"
 	"os"
 
 	"github.com/pschlump/dbgo"
 	"github.com/pschlump/fmcsa-svr/config"
-	"github.com/pschlump/gorush/storage/file_store"
-	"github.com/pschlump/gorush/storage/memory"
-	"github.com/pschlump/gorush/storage/redis"
+	"github.com/pschlump/fmcsa-svr/core"
+	"github.com/pschlump/fmcsa-svr/storage/file_store"
+	"github.com/pschlump/fmcsa-svr/storage/memory"
+	"github.com/pschlump/fmcsa-svr/storage/redis"
 	"github.com/thoas/stats"
 )
 
@@ -22,18 +26,12 @@ var StatStorage *StateStorage
 
 // App is status structure
 type App struct {
-	Version        string      `json:"version"`
-	SuccessTasks   int         `json:"success_tasks"`
-	FailureTasks   int         `json:"failure_tasks"`
-	SubmittedTasks int         `json:"submitted_tasks"`
-	TotalCount     int64       `json:"total_count"`
-	Fmcsa          FmcsaStatus `json:"fmcsa"`
-}
-
-// AndroidStatus is android structure
-type FmcsaStatus struct {
-	PushSuccess int64 `json:"push_success"`
-	PushError   int64 `json:"push_error"`
+	Version           string `json:"version"`
+	TotalCount        int64  `json:"total_count"`
+	FmcsaSuccessCount int64  `json:"fmcsa_success_count"`
+	FmcsaFailedCount  int64  `json:"fmcsa_failed_count"`
+	CacheSuccessCount int64  `json:"cache_success_count"`
+	CacheFailedCount  int64  `json:"cache_failed_count"`
 }
 
 // InitAppStatus for initialize app status
@@ -42,7 +40,7 @@ func InitAppStatus(conf *config.ConfigData) error {
 	// logx.LogAccess.Info("Init App Status Engine as ", conf.StatEngine)
 	dbgo.Fprintf(logFilePtr, "Init App Status Engine as %s\n", conf.StatEngine)
 
-	// var store core.Storage
+	var store core.Storage
 	//nolint:goconst
 	switch conf.StatEngine {
 	case "memory":

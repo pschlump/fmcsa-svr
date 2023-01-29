@@ -1,0 +1,7 @@
+{
+	"TotalCount": "fmcsa-svr-total-count-key"
+	, "FmcsaSuccess": "fmcsa-svr-fmcsa-success-key"
+	, "FmcsaError": "fmcsa-svr-fmcsa-error-key"
+	, "CacheSuccess": "fmcsa-svr-cache-success-key"
+	, "CacheError": "fmcsa-svr-cache-error-key"
+}

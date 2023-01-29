@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Copyright (c) Philip Schlump, 2023.
+# This file is MIT licensed, see ../LICENSE.mit
+
 mkdir -p x
 cd x
 
