@@ -63,6 +63,12 @@ func main() {
 		os.Exit(0)
 	}
 
+	// -----------------------------------------------------------------------------------
+	// Save PID to log directory for possible kill later
+	// -----------------------------------------------------------------------------------
+	os.Mkdir("./log", 0755)
+	ioutil.WriteFile("./log/pid_file", []byte(fmt.Sprintf("%d\n", os.Getpid())), 0644)
+
 	// ------------------------------------------------------------------------------
 	// Read in Configuration
 	// ------------------------------------------------------------------------------
@@ -94,18 +100,25 @@ func main() {
 
 	router := gin.Default()
 	router.Use(static.Serve("/", static.LocalFile(*Dir, true)))
+
 	router.GET("/api/v1/status", func(c *gin.Context) {
 		c.JSON(http.StatusOK /*200*/, gin.H{
 			"status": "success",
 			"msg":    "Hello Silly World!",
 		})
 	})
-
-	type ApiGetMc struct {
-		Mc string `json:"mc" form:"mc" binding:"required"`
-	}
+	router.GET("/status", func(c *gin.Context) {
+		c.JSON(http.StatusOK /*200*/, gin.H{
+			"status": "success",
+			"msg":    "Hello Silly World!",
+		})
+	})
 
 	router.GET("/api/v1/mc-number-data", func(c *gin.Context) {
+
+		type ApiGetMc struct {
+			Mc string `json:"mc" form:"mc" binding:"required"`
+		}
 
 		auth := c.Request.Header.Get("X-Authentication")
 		if db8 {
@@ -181,11 +194,7 @@ func main() {
 		return
 	})
 
-	router.GET("/status", func(c *gin.Context) {
-		c.Header("Content-Type", "application/json; charset=utf-8")
-		c.String(http.StatusOK /*200*/, dbgo.SVarI(c))
-	})
-
+	// Prometheus metric data
 	router.GET("/metric", metricsHandler)
 
 	router.Run(*HostPort) // listen and serve on 0.0.0.0:9090

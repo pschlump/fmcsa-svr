@@ -5,8 +5,12 @@ all:
 
 run:
 	go build
-	mkdir -p ./log
+	./kill-fmcsa-svr.sh
+	check-json-syntax --ignore-tab-warning ./cfg.json
 	./fmcsa-svr >log/output.log 2>&1 &
+	sleep 1
+	./test/tgo_is_running.sh
+	@echo PASS | color-cat -c green
 
 # (base) philip@victoria gin1 % go build
 # # golang.org/x/sys/unix
