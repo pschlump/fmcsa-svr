@@ -166,24 +166,21 @@ func main() {
 		pp.Mc = re.ReplaceAllString(pp.Mc, "")
 		fmt.Printf("After mc=->%s<-\n", pp.Mc)
 
-		var carrierFileName string
 		var carrierData string
-		fn := fmt.Sprintf("%s/%s.json", *Cache, pp.Mc)
-		cacheHit := true
+		carrierFileName := fmt.Sprintf("%s/%s.json", *Cache, pp.Mc)
+		cacheHit := false
+		dbgo.Printf("%(yellow)file name ->%s<- at:%(LF)\n", carrierFileName)
 
-		if filelib.Exists(fn) {
-			if buf, err := ioutil.ReadFile(fn); err != nil {
-				cacheHit = false
+		if filelib.Exists(carrierFileName) {
+			if buf, err := ioutil.ReadFile(carrierFileName); err != nil {
+				dbgo.Fprintf(os.Stderr, "%(red)Error reading cached file ->%s<- error :%s\n", carrierFileName, err)
 				status.StatStorage.AddCacheError(int64(1))
-				dbgo.Fprintf(os.Stderr, "%(red)Error reading cached file ->%s<- error :%s\n", fn, err)
 			} else {
+				cacheHit = true
 				carrierData = string(buf)
-				status.StatStorage.AddCacheSuccess(int64(1))
-				carrierFileName = string(buf)
 				dbgo.Printf("%(green)Got it %s from cache\n", pp.Mc)
+				status.StatStorage.AddCacheSuccess(int64(1))
 			}
-		} else {
-			cacheHit = false
 		}
 
 		if !cacheHit {
@@ -209,6 +206,7 @@ func main() {
 			dbgo.Printf("%(yellow)Got it %s from server\n", pp.Mc)
 		}
 
+		dbgo.Printf("%(yellow)Update cache for %s file name ->%s<- at:%(LF)\n", pp.Mc, carrierFileName)
 		ioutil.WriteFile(carrierFileName, []byte(carrierData), 0644)
 
 		c.Header("Content-Type", "application/json; charset=utf-8")

@@ -1,7 +1,22 @@
 {
-	"TotalCount": "fmcsa-svr-total-count-key"
-	, "FmcsaSuccess": "fmcsa-svr-fmcsa-success-key"
-	, "FmcsaError": "fmcsa-svr-fmcsa-error-key"
-	, "CacheSuccess": "fmcsa-svr-cache-success-key"
-	, "CacheError": "fmcsa-svr-cache-error-key"
+	"TotalCount": {
+		"key": "fmcsa-svr-total-count-key"
+		, "Desc": "Number of Requests"
+	}
+	, "FmcsaSuccessCount": {
+		"key": "fmcsa-svr-fmcsa-success-key"
+		, "Desc": "Count of succesful requets"
+	}
+	, "FmcsaErrorCount": {
+		"key": "fmcsa-svr-fmcsa-error-key"
+		, "Desc": "Count of failed requests"
+	}
+	, "CacheSuccessCount": {
+		"key": "fmcsa-svr-cache-success-key"
+		, "Desc": "Count of Requests from cache"
+	}
+	, "CacheErrorCount": {
+		"key": "fmcsa-svr-cache-error-key"
+		, "Desc": "Count of cache misses"
+	}
 }

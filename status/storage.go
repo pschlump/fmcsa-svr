@@ -4,6 +4,9 @@ package status
 // This file is MIT licensed, see ../LICENSE.mit
 
 import (
+	"os"
+
+	"github.com/pschlump/dbgo"
 	"github.com/pschlump/fmcsa-svr/core"
 )
 
@@ -55,6 +58,7 @@ func (s *StateStorage) AddFmcsaError(count int64) {
 
 // AddCacheSuccess record push notification count.
 func (s *StateStorage) AddCacheSuccess(count int64) {
+	dbgo.Fprintf(os.Stderr, "at:%(LF) key ->%s<- add %d\n", core.CacheSuccessKey, count)
 	s.store.Add(core.CacheSuccessKey, count)
 }
 
@@ -80,10 +84,10 @@ func (s *StateStorage) GetFmcsaError() int64 {
 
 // GetCacheSuccess show success counts of total requests to FMCSA remote server.
 func (s *StateStorage) GetCacheSuccess() int64 {
-	return s.store.Get(core.FmcsaSuccessKey)
+	return s.store.Get(core.CacheSuccessKey)
 }
 
 // GetCacheError show success counts of total requests to FMCSA remote server.
 func (s *StateStorage) GetCacheError() int64 {
-	return s.store.Get(core.CacheSuccessKey)
+	return s.store.Get(core.CacheErrorKey)
 }

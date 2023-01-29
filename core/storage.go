@@ -8,7 +8,6 @@ const (
 	CacheErrorKey   = "fmcsa-svr-cache-error-key"
 )
 
-// Storage interface
 type Storage interface {
 	Init() error
 	Add(key string, count int64)

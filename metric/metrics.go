@@ -12,10 +12,10 @@ import (
 // exposes fmcsa_svr_ metrics for prometheus
 type Metrics struct {
 	TotalRequestsCount *prometheus.Desc
-	FmcsaSuccess       *prometheus.Desc
-	FmcsaError         *prometheus.Desc
-	CacheSuccess       *prometheus.Desc
-	CacheError         *prometheus.Desc
+	FmcsaSuccessCount  *prometheus.Desc
+	FmcsaErrorCount    *prometheus.Desc
+	CacheSuccessCount  *prometheus.Desc
+	CacheErrorCount    *prometheus.Desc
 }
 
 // NewMetrics returns a new Metrics with all prometheus.Desc initialized
@@ -26,22 +26,22 @@ func NewMetrics() Metrics {
 			"Number of request count",
 			nil, nil,
 		),
-		FmcsaSuccess: prometheus.NewDesc(
+		FmcsaSuccessCount: prometheus.NewDesc(
 			"fmcsa_svr_fmcsa_success",
 			"Number of FMCSA success count",
 			nil, nil,
 		),
-		FmcsaError: prometheus.NewDesc(
+		FmcsaErrorCount: prometheus.NewDesc(
 			"fmcsa_svr_fmcsa_error",
 			"Number of FMCSA fail count",
 			nil, nil,
 		),
-		CacheSuccess: prometheus.NewDesc(
+		CacheSuccessCount: prometheus.NewDesc(
 			"fmcsa_svr_cache_success",
 			"Number of FMCSA requests from cache success count",
 			nil, nil,
 		),
-		CacheError: prometheus.NewDesc(
+		CacheErrorCount: prometheus.NewDesc(
 			"fmcsa_svr_cache_error",
 			"Number of FMCSA requests from cache fail count",
 			nil, nil,
@@ -54,17 +54,17 @@ func NewMetrics() Metrics {
 // Describe returns all possible prometheus.Desc
 func (c Metrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.TotalRequestsCount
-	ch <- c.FmcsaSuccess
-	ch <- c.FmcsaError
-	ch <- c.CacheSuccess
-	ch <- c.CacheError
+	ch <- c.FmcsaSuccessCount
+	ch <- c.FmcsaErrorCount
+	ch <- c.CacheSuccessCount
+	ch <- c.CacheErrorCount
 }
 
 // Collect returns the metrics with values
 func (c Metrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(c.TotalRequestsCount, prometheus.CounterValue, float64(status.StatStorage.GetTotalCount()))
-	ch <- prometheus.MustNewConstMetric(c.FmcsaSuccess, prometheus.CounterValue, float64(status.StatStorage.GetFmcsaSuccess()))
-	ch <- prometheus.MustNewConstMetric(c.FmcsaError, prometheus.CounterValue, float64(status.StatStorage.GetFmcsaError()))
-	ch <- prometheus.MustNewConstMetric(c.CacheSuccess, prometheus.CounterValue, float64(status.StatStorage.GetCacheSuccess()))
-	ch <- prometheus.MustNewConstMetric(c.CacheError, prometheus.CounterValue, float64(status.StatStorage.GetCacheError()))
+	ch <- prometheus.MustNewConstMetric(c.FmcsaSuccessCount, prometheus.CounterValue, float64(status.StatStorage.GetFmcsaSuccess()))
+	ch <- prometheus.MustNewConstMetric(c.FmcsaErrorCount, prometheus.CounterValue, float64(status.StatStorage.GetFmcsaError()))
+	ch <- prometheus.MustNewConstMetric(c.CacheSuccessCount, prometheus.CounterValue, float64(status.StatStorage.GetCacheSuccess()))
+	ch <- prometheus.MustNewConstMetric(c.CacheErrorCount, prometheus.CounterValue, float64(status.StatStorage.GetCacheError()))
 }

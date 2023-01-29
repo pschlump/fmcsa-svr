@@ -6,6 +6,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/pschlump/ReadConfig"
 )
@@ -25,14 +26,20 @@ type ConfigData struct {
 	RedisCluster     string `json:"redis_cluster" default:"no"`
 }
 
+var doOnce sync.Once
+var gCfg *ConfigData
+
 func LoadTestConfig() (rv *ConfigData) {
-	rv = &ConfigData{}
+	doOnce.Do(func() {
+		rv = &ConfigData{}
+		gCfg = rv
 
-	err := ReadConfig.ReadFile("./testdata/cfg.json", rv)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to read confguration: %s error %s\n", "./destdata/cfg.json", err)
-		os.Exit(1)
-	}
+		err := ReadConfig.ReadFile("./testdata/cfg.json", rv)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to read confguration: %s error %s\n", "./destdata/cfg.json", err)
+			os.Exit(1)
+		}
 
-	return
+	})
+	return gCfg
 }

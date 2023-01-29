@@ -46,10 +46,12 @@ func (s *Storage) Get(key string) int64 {
 
 // Init client storage.
 func (*Storage) Init() error {
+	// PJS - should read in from file.
 	return nil
 }
 
 // Close the storage connection
 func (*Storage) Close() error {
+	// PJS - should write out to file.
 	return nil
 }

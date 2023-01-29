@@ -19,15 +19,15 @@ func TestMemoryEngine(t *testing.T) {
 	err := memory.Init()
 	assert.Nil(t, err)
 
-	memory.Add(core.HuaweiSuccessKey, 10)
-	val = memory.Get(core.HuaweiSuccessKey)
+	memory.Add(core.CacheSuccessKey, 10)
+	val = memory.Get(core.CacheSuccessKey)
 	assert.Equal(t, int64(10), val)
-	memory.Add(core.HuaweiSuccessKey, 10)
-	val = memory.Get(core.HuaweiSuccessKey)
+	memory.Add(core.CacheSuccessKey, 10)
+	val = memory.Get(core.CacheSuccessKey)
 	assert.Equal(t, int64(20), val)
 
-	memory.Set(core.HuaweiSuccessKey, 0)
-	val = memory.Get(core.HuaweiSuccessKey)
+	memory.Set(core.CacheSuccessKey, 0)
+	val = memory.Get(core.CacheSuccessKey)
 	assert.Equal(t, int64(0), val)
 
 	// test concurrency issues
@@ -35,12 +35,12 @@ func TestMemoryEngine(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func() {
-			memory.Add(core.HuaweiSuccessKey, 1)
+			memory.Add(core.CacheSuccessKey, 1)
 			wg.Done()
 		}()
 	}
 	wg.Wait()
-	val = memory.Get(core.HuaweiSuccessKey)
+	val = memory.Get(core.CacheSuccessKey)
 	assert.Equal(t, int64(10), val)
 
 	assert.NoError(t, memory.Close())
