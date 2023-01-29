@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -17,8 +18,10 @@ import (
 	"github.com/brandenc40/qcmobile"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/pschlump/ReadConfig"
 	"github.com/pschlump/dbgo"
 	"github.com/pschlump/filelib"
+	"github.com/pschlump/fmcsa-svr/config"
 )
 
 var HostPort = flag.String("hostport", "127.0.0.1:10042", "Host/Port to listen on")
@@ -28,8 +31,11 @@ var DbFlagParam = flag.String("db_flag", "", "Additional Debug Flags")
 var Version = flag.Bool("version", false, "Report version of code and exit")
 var Comment = flag.String("comment", "", "Unused comment for ps.")
 var Cache = flag.String("cache", "./cache", "Cached Data based on previous calls")
+var Cfg = flag.String("cfg", "cfg.json", "config file for this call")
 
 var DbOn map[string]bool = make(map[string]bool)
+var logFilePtr = os.Stderr
+var gCfg config.ConfigData
 
 func main() {
 	flag.Usage = func() {
@@ -45,16 +51,40 @@ func main() {
 		os.Exit(1)
 	}
 
+	if Cfg == nil {
+		fmt.Printf("--cfg is a required parameter\n")
+		os.Exit(1)
+	}
+
+	// logx.SetLogFilePtr(os.Stderr)
+
 	if *Version {
 		fmt.Printf("Version (Git Commit): %s\n", GitCommit)
 		os.Exit(0)
 	}
 
+	// ------------------------------------------------------------------------------
+	// Read in Configuration
+	// ------------------------------------------------------------------------------
+	err := ReadConfig.ReadFile(*Cfg, &gCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to read confguration: %s error %s\n", *Cfg, err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("%s\n", dbgo.SVarI(gCfg))
+
 	DebugFlagProcess(*DbFlagParam, DbOn)
 	os.MkdirAll(*Cache, 0755)
 
+	if gCfg.StatEngine == "file" {
+		os.MkdirAll(filepath.Dir(gCfg.StatFileLocaiton), 0755) // string `json:"stat_file_location" default:"./data/stat.json"`
+	}
+
+	// ------------------------------------------------------------------------------
 	//fmt.Printf("DbOn=%s\n", dbgo.SVarI(DbOn))
 	//os.Exit(1)
+	// ------------------------------------------------------------------------------
 
 	Key := os.Getenv("FMCSA_WebKey")
 	if Key == "" {
@@ -155,6 +185,8 @@ func main() {
 		c.Header("Content-Type", "application/json; charset=utf-8")
 		c.String(http.StatusOK /*200*/, dbgo.SVarI(c))
 	})
+
+	router.GET("/metric", metricsHandler)
 
 	router.Run(*HostPort) // listen and serve on 0.0.0.0:9090
 }
