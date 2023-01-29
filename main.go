@@ -78,7 +78,9 @@ func main() {
 	router.GET("/api/v1/mc-number-data", func(c *gin.Context) {
 
 		auth := c.Request.Header.Get("X-Authentication")
-		// fmt.Printf("auth=->%s<- %T ->%s<-\n", auth, auth, dbgo.SVarI(c.Request.Header))
+		if db8 {
+			fmt.Printf("auth=->%s<- %T ->%s<-\n", auth, auth, dbgo.SVarI(c.Request.Header))
+		}
 		if auth != *ValidationKey {
 			c.JSON(http.StatusUnauthorized /*401*/, gin.H{
 				"status": "error",
@@ -201,3 +203,5 @@ func BindFormOrJSON(c *gin.Context, bindTo interface{}) (err error) {
 	dbgo.Printf("%(cyan)Parameters: %s at %s\n", dbgo.SVarI(bindTo), dbgo.LF(2))
 	return
 }
+
+const db8 = true

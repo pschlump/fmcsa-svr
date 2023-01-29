@@ -5,7 +5,8 @@ all:
 
 run:
 	go build
-	./gin1 &
+	mkdir -p ./log
+	./fmcsa-svr >log/output.log 2>&1 &
 
 # (base) philip@victoria gin1 % go build
 # # golang.org/x/sys/unix
@@ -31,3 +32,5 @@ linux:
 
 deploy:
 	scp fmcsa-svr_linux fmcsa-systemd.service philip@45.79.53.54:/home/philip/tmp
+
+
