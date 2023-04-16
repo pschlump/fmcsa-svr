@@ -1,5 +1,16 @@
 package metrics
 
+/*
+
+CREATE TABLE if not exists t_key_value (
+	id			uuid DEFAULT uuid_generate_v4() not null primary key,
+	key			text not null,	-- the key.
+	data		jsonb,			-- the data.
+	updated 	timestamp, 									 						-- Project update timestamp (YYYYMMDDHHMMSS timestamp).
+	created 	timestamp default current_timestamp not null 						-- Project creation timestamp (YYYYMMDDHHMMSS timestamp).
+);
+*/
+
 // Create the storage system, call it "storeStats" -- Connect to Redis, Memory, Disk etc.
 // Create the Metrics - pass it "storeStats"
 
@@ -31,6 +42,13 @@ func NewMetricsData ( saveMethod string, validKeys []string, desc []string, save
 	// Call the storage "init" to pull data
 
 	// Convert into md.Data
+}
+
+func AddMetricsKeys (  validKeys []string, desc []string ) {
+	for ii, kk := range validKeys {
+		md.Data[kk] = 0
+		md.prometheusCounter[kk] = prometheus.NewDesc( kk, desc[ii], nil, nil)
+	}
 }
 
 func (md *MetricsData)AddCounter ( CounterName string, int count ) ( err error ) {

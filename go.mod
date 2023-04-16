@@ -1,16 +1,15 @@
 module github.com/pschlump/fmcsa-svr
 
-go 1.18
+go 1.19
 
 require (
 	github.com/brandenc40/qcmobile v1.1.0
 	github.com/gin-contrib/static v0.0.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis v6.15.9+incompatible
-	github.com/golang-queue/queue v0.1.3
 	github.com/prometheus/client_golang v1.14.0
-	github.com/pschlump/ReadConfig v1.0.4
-	github.com/pschlump/dbgo v1.0.4
+	github.com/pschlump/ReadConfig v1.0.5
+	github.com/pschlump/dbgo v1.0.6
 	github.com/pschlump/filelib v1.0.6
 	github.com/stretchr/testify v1.7.3
 	github.com/thoas/stats v0.0.0-20190407194641-965cb2de1678
@@ -26,7 +25,6 @@ require (
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator/v10 v10.4.1 // indirect
-	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
